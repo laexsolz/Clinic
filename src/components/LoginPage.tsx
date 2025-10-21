@@ -1,6 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn, UserPlus, Lock, Mail, User, Stethoscope, Shield, Users } from 'lucide-react';
+import {
+  LogIn,
+  UserPlus,
+  Lock,
+  Mail,
+  User,
+  Stethoscope,
+  Shield,
+  Users,
+} from 'lucide-react';
+import { toast, Toaster } from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
+  import { Variants } from 'framer-motion';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -8,33 +20,76 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'patient' | 'doctor' | 'admin'>('patient');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
 
+
+const cardVariants: Variants = {
+  initial: { opacity: 0, y: 12, scale: 0.98 },
+  enter: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.6, // slower animation
+      ease: [0.22, 1, 0.36, 1], // smooth ease-out
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -12,
+    scale: 0.98,
+    transition: {
+      duration: 0.45, // slightly faster exit
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+
+  // local error is shown via toast instead of inline banner
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
       if (isLogin) {
         await signIn(email, password);
+        // you can show a toast on sign in if you want:
+        // toast.success('Signed in — redirecting...');
       } else {
         if (!fullName.trim()) {
           throw new Error('Please enter your full name');
         }
+
         await signUp(email, password, fullName, role);
+
+        // success: show toast, switch to login view
+        toast.success('Account created — please sign in', {
+          duration: 2500,
+          position: 'top-center',
+        });
+
+        // small delay so user sees the toast, but using animation makes switching feel smooth
+        setTimeout(() => {
+          setIsLogin(true);
+        }, 350); // 350ms feels smooth with the animation below
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      // show toast top-center for errors
+      const message = err?.message ?? 'An error occurred';
+      toast.error(message, { position: 'top-center' });
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
+      {/* react-hot-toast container (keep near top of app or in this page) */}
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-8 text-white">
@@ -43,7 +98,7 @@ export default function LoginPage() {
                 <Stethoscope className="w-8 h-8" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-center mb-2">HealthCare Portal</h1>
+            <h1 className="text-3xl font-bold text-center mb-2">HealthCare Portal Demo</h1>
             <p className="text-blue-100 text-center text-sm">
               Secure access for patients, doctors, and administrators
             </p>
@@ -75,9 +130,81 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <>
+            {/* AnimatePresence handles smooth enter/exit transitions between Sign In/Sign Up forms */}
+            <AnimatePresence mode="wait" initial={false}>
+              {isLogin ? (
+                <motion.form
+                  key="login"
+                  onSubmit={handleSubmit}
+                  className="space-y-4"
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="enter"
+                  exit="exit"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        placeholder="you@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      <span>Sign In</span>
+                    )}
+                  </button>
+                </motion.form>
+              ) : (
+                <motion.form
+                  key="signup"
+                  onSubmit={handleSubmit}
+                  className="space-y-4"
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="enter"
+                  exit="exit"
+                >
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Full Name
@@ -138,68 +265,62 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
-                </>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        placeholder="you@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      <span>Create Account</span>
+                    )}
+                  </button>
+                </motion.form>
               )}
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder="you@example.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
-                )}
-              </button>
-            </form>
+            </AnimatePresence>
 
             <div className="mt-6 text-center text-sm text-slate-600">
               {isLogin ? (
