@@ -227,7 +227,7 @@ export default function BillingPanel() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Billing</h2>
+        <h2 className="text-lg font-semibold">Manage Bills</h2>
         <div className="flex items-center gap-2">
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by patient or invoice #" className="px-3 py-2 rounded-md border border-slate-200 text-sm w-56 max-w-xs" />
           <button onClick={openCreate} className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white">

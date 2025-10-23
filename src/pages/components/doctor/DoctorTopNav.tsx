@@ -1,16 +1,16 @@
-// components/admin/AdminTopNav.tsx
+// components/Doctor/DoctorTopNav.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   Menu,
-  Shield,
   LogOut,
   MessageCircleQuestion,
   X,
+  Stethoscope,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 
-export default function AdminTopNav({ onToggle }: { onToggle: () => void }) {
+export default function DoctorTopNav({ onToggle }: { onToggle: () => void }) {
   const { profile, signOut } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -61,9 +61,9 @@ export default function AdminTopNav({ onToggle }: { onToggle: () => void }) {
           </button>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" />
+            <Stethoscope className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" />
             <span className="text-sm sm:text-lg font-semibold text-slate-800">
-              Admin Portal Demo
+              Doctor Portal Demo
             </span>
           </div>
         </div>
